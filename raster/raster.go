@@ -5,10 +5,12 @@ import (
 	"image/color"
 )
 
+// Target : target
 type Target interface {
 	Raster(width, height, bytesWidth int, rasterData []byte)
 }
 
+// Converter : define size and threshold to black/white
 type Converter struct {
 	// The maximum line width of the printer, in dots
 	MaxWidth int
@@ -17,6 +19,7 @@ type Converter struct {
 	Threshold float64
 }
 
+// Print : Print image
 func (c *Converter) Print(img image.Image, target Target) {
 	sz := img.Bounds().Size()
 
@@ -25,6 +28,7 @@ func (c *Converter) Print(img image.Image, target Target) {
 	target.Raster(rw, sz.Y, bw, data)
 }
 
+// ToRaster : convert pixel to pixel for escpos command white/black
 func (c *Converter) ToRaster(img image.Image) (data []byte, imageWidth, bytesWidth int) {
 	sz := img.Bounds().Size()
 
@@ -37,14 +41,15 @@ func (c *Converter) ToRaster(img image.Image) (data []byte, imageWidth, bytesWid
 
 	bytesWidth = imageWidth / 8
 	if imageWidth%8 != 0 {
-		bytesWidth += 1
+		bytesWidth++
 	}
 
 	data = make([]byte, bytesWidth*sz.Y)
 
 	for y := 0; y < sz.Y; y++ {
 		for x := 0; x < imageWidth; x++ {
-			if lightness(img.At(x, y)) >= c.Threshold {
+			// Threshold(black/white) is greater than pixel color
+			if c.Threshold >= lightness(img.At(x, y)) {
 				// position in data is: line_start + x / 8
 				// line_start is y * bytesWidth
 				// then 8 bits per byte
